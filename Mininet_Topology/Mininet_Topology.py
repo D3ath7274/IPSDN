@@ -46,7 +46,7 @@ def myNetwork():
     net.addLink(switch1, victim1)
     net.addLink(switch1, attacker)
     net.addLink(switch1, victim3)
-
+    net.addNAT().configDefault()
     info('*** Starting network\n')
     net.build()
     info('*** Starting controllers\n')

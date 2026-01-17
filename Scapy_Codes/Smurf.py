@@ -19,7 +19,9 @@ def main():
     print (broadcast_addr)
     print (target_addr)
 
-    interface = popen('ifconfig | awk \'/eth0/ {print $1}\'').read()
+    interface = popen('ip link show | grep "eth0:" | awk \'{print $2}\' | tr -d ":"').read()
+    if not interface.strip():
+        interface = popen('ifconfig | grep "eth0" | awk \'{print $1}\'').read()
     print (repr(interface))
 
     payload = ""

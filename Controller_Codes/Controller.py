@@ -14,6 +14,8 @@ from ryu.lib import hub
 import random
 from datetime import datetime
 import psutil
+import socket
+import threading
 
 import timeit
 import os
@@ -70,6 +72,11 @@ class Controller(app_manager.RyuApp):
         self.snort.set_config(socket_config)
         self.snort.start_socket_server()
         
+        # Start network socket server for Sending_Alert.py
+        self.socket_server_thread = threading.Thread(target=self.start_socket_server)
+        self.socket_server_thread.daemon = True
+        self.socket_server_thread.start()
+        
         self.mlp_training()
         self.collect_thread = hub.spawn(self.collect)
 
@@ -107,8 +114,24 @@ class Controller(app_manager.RyuApp):
             a = accuracy_score(Y_test, prediction) * 100
             print("Accuracy score: " + str(a) + "%")
         
-        
-
+    def start_socket_server(self):
+        """Start network socket server to receive alerts from Sending_Alert.py"""
+        try:
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_socket.bind(('127.0.0.1', 51234))
+            server_socket.listen(1)
+            self.logger.info("Socket server listening on 127.0.0.1:51234")
+            
+            while True:
+                try:
+                    client_socket, addr = server_socket.accept()
+                    self.logger.info("Alert received from %s", addr)
+                    client_socket.close()
+                except Exception as e:
+                    self.logger.error("Socket server error: %s", e)
+        except Exception as e:
+            self.logger.error("Failed to start socket server: %s", e)
 
     def collect(self):
         self.logger.info("Collecting flows for anomaly detection")

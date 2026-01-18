@@ -160,7 +160,11 @@ class Controller(app_manager.RyuApp):
             "Receiving flow stats from datapath %s", ev.msg.datapath.id)
 
         start = timeit.default_timer()
-        for stat in sorted([flow for flow in body if (flow.priority == 1)]):
+       for stat in sorted(
+                [flow for flow in body if flow.priority == 1],
+                key=lambda f: f.packet_count,
+                reverse=True):
+
             self.anomaly_based_ips(ev.msg.datapath.id, stat.match['eth_src'], stat.duration_sec, stat.match['ip_proto'],
                                     stat.byte_count, stat.packet_count)
 

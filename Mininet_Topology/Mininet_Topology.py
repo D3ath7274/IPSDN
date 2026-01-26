@@ -28,6 +28,10 @@ def myNetwork():
     info('*** Add switches\n')
     switch1 = net.addSwitch(
         'switch1', cls=OVSKernelSwitch, dpid='0000000000000001', protocols='OpenFlow13')
+    
+    info('*** Add IoT switch\n')
+    switch2 = net.addSwitch(
+        'switch2', cls=OVSKernelSwitch, dpid='0000000000000002', protocols='OpenFlow13')
 
     info('*** Add hosts\n')
     server = net.addHost('server', cls=Host, ip='10.0.0.4', defaultRoute=None)
@@ -39,6 +43,11 @@ def myNetwork():
                           ip='10.0.0.3', defaultRoute=None)
     victim1 = net.addHost('victim1', cls=Host,
                           ip='10.0.0.1', defaultRoute=None)
+    
+    info('*** Add IoT devices\n')
+    iot1 = net.addHost('sensor1', cls=CPULimitedHost, ip='10.1.0.1', cpu=0.1, defaultRoute=None)
+    iot2 = net.addHost('sensor2', cls=CPULimitedHost, ip='10.1.0.2', cpu=0.1, defaultRoute=None)
+    iot3 = net.addHost('sensor3', cls=CPULimitedHost, ip='10.1.0.3', cpu=0.1, defaultRoute=None)
 
     info('*** Add links\n')
     net.addLink(switch1, victim2)
@@ -46,6 +55,14 @@ def myNetwork():
     net.addLink(switch1, victim1)
     net.addLink(switch1, attacker)
     net.addLink(switch1, victim3)
+    
+    info('*** Link IoT switch to main switch\n')
+    net.addLink(switch1, switch2)
+    
+    info('*** Link IoT devices to IoT switch\n')
+    net.addLink(switch2, sensor1, cls=TCLink, delay='10ms', bw=1)
+    net.addLink(switch2, sensor2, cls=TCLink, delay='10ms', bw=1)
+    net.addLink(switch2, sensor3, cls=TCLink, delay='10ms', bw=1)
     net.addNAT().configDefault()
     info('*** Starting network\n')
     net.build()

@@ -25,6 +25,7 @@ from sklearn.preprocessing import minmax_scale
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
+import CVE_Updater
 
 snort_alerts = 0
 packets_in = 0
@@ -78,6 +79,10 @@ class Controller(app_manager.RyuApp):
         self.socket_server_thread.start()
         
         self.mlp_training()
+        
+        # Start CVE Auto-Updater (Default: every 1 day)
+        CVE_Updater.start_scheduler(interval_days=1)
+        
         self.collect_thread = hub.spawn(self.collect)
 
     def mlp_training(self):
@@ -189,8 +194,9 @@ class Controller(app_manager.RyuApp):
 
 
         if decision == 1:
+            current_time = datetime.now().strftime("%d-%m-%Y_%H:%M:%S")
             self.logger.info(
-                "Anomaly detected, configuring datapath %s to block traffic from %s", dpid, src)
+                "Anomaly detected at %s, Type: %s, configuring datapath %s to block traffic from %s", current_time, decision, dpid, src)
             datapath = self.datapaths[dpid]
             ofproto = datapath.ofproto
             ofp_parser = datapath.ofproto_parser
@@ -229,7 +235,8 @@ class Controller(app_manager.RyuApp):
 
         msg = ev.msg
 
-        self.logger.info('Alertmsg: %s' % ''.join(msg.alertmsg))
+        current_time = datetime.now().strftime("%d-%m-%Y_%H:%M:%S")
+        self.logger.info('Time: %s, Alertmsg: %s' % (current_time, ''.join(msg.alertmsg)))
 
         self.packet_print(msg)
         self.signature_based_ips(msg.pkt)
